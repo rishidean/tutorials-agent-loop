@@ -1,1 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Click Farm</title>
+<style>
+  :root { font-family: system-ui, -apple-system, sans-serif; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         background: #0f1f12; color: #eafce0; }
+  .farm { text-align: center; padding: 2rem; }
+  .crop { font-size: 3.5rem; }
+  #score { font-size: 3rem; font-weight: 800; margin: 0.25rem 0 1rem; }
+  #harvest { font-size: 1.6rem; padding: 1rem 2rem; border: 0; border-radius: 1rem;
+             background: #ffd34d; color: #2a1d00; cursor: pointer; font-weight: 700; }
+  #harvest:active { transform: scale(0.97); }
+  .shop { margin-top: 1.75rem; }
+  #hire { font-size: 1rem; padding: 0.6rem 1.2rem; border: 0; border-radius: 0.6rem;
+          background: #6cbf5a; color: #08220a; cursor: pointer; font-weight: 700; }
+  .muted { opacity: 0.85; font-size: 0.95rem; margin-top: 0.6rem; }
+</style>
+</head>
+<body>
+  <div class="farm">
+    <div class="crop">🌽</div>
+    <div id="score">0</div>
+    <button id="harvest">Harvest +1</button>
+    <div class="shop">
+      <button id="hire">Hire Farmhand</button>
+      <p class="muted">
+        Farmhands: <span id="farmhands">0</span>
+        &nbsp;·&nbsp; Next costs <span id="cost">10</span>
+      </p>
+    </div>
+  </div>
 
+<script>
+  /* ⚠️ DEMO FIXTURE — PLANTED MODE ONLY.
+     This is a complete, working Sprint 1 + Sprint 2 build... except it ships
+     WITHOUT an affordability guard: the hire handler always deducts and always
+     hires, so score can go negative. Sprint 3's acceptance test (AC2/AC3) catches
+     this, which forces the RED -> fix -> GREEN inner loop live on the projector.
+     The default (emergent) run never loads this file. */
+
+  const KEY = 'clickfarm';
+  const HIRE_COST = 10; // flat cost (Sprint 2). Sprint 3 makes this scale.
+
+  let state = load();
+
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && typeof s.score === 'number' && typeof s.farmhands === 'number') return s;
+    } catch (e) { /* fall through to a fresh game */ }
+    return { score: 0, farmhands: 0 };
+  }
+
+  function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  function render() {
+    document.getElementById('score').textContent = state.score;
+    document.getElementById('farmhands').textContent = state.farmhands;
+    document.getElementById('cost').textContent = HIRE_COST;
+  }
+
+  document.getElementById('harvest').addEventListener('click', function () {
+    state.score += 1;
+    save(); render();
+  });
+
+  document.getElementById('hire').addEventListener('click', function () {
+    /* BUG (planted): no affordability check. Deducts and hires unconditionally,
+       so clicking Hire with too little score sends the balance negative. */
+    state.score -= HIRE_COST;
+    state.farmhands += 1;
+    save(); render();
+  });
+
+  // Auto-harvest: each farmhand adds +1 score per second while the page is open.
+  setInterval(function () {
+    if (state.farmhands > 0) {
+      state.score += state.farmhands;
+      save(); render();
+    }
+  }, 1000);
+
+  render();
+</script>
+</body>
+</html>
