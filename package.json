@@ -1,0 +1,12 @@
+{
+  "name": "click-farm",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Click Farm — the demo app built by the agentic double-loop tutorial.",
+  "scripts": {
+    "test": "playwright test --reporter=line"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0"
+  }
+}
