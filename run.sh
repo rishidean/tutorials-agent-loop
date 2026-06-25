@@ -11,7 +11,7 @@
 #
 # Usage:
 #   ./run.sh                      # emergent mode (default)
-#   DEMO_MODE=planted ./run.sh    # guarantees a Sprint-3 RED -> fix -> GREEN
+#   DEMO_MODE=planted ./run.sh    # seeds the Sprint-3 bug for QA to catch
 #
 # Tunables (env vars):
 #   MAX_SPRINTS    safety cap on total iterations           (default 6)
@@ -76,9 +76,8 @@ while grep -q '^- \[ \]' "$ROADMAP" && (( n < MAX_SPRINTS )); do
   echo "────────────────────────────────────────────────────────"
 
   # PLANTED MODE: right before Sprint 3, seed a build that ships WITHOUT the
-  # affordability guard. Sprint 3's acceptance test then catches it, guaranteeing
-  # the RED -> fix -> GREEN inner loop on the projector. Emergent mode skips this
-  # and lets the agent's own earlier output stand (RED is realistic, not forced).
+  # affordability guard. Sprint 3's acceptance tests are written to catch it.
+  # Emergent mode skips this and lets the agent's own earlier output stand.
   if [[ "$DEMO_MODE" == "planted" && "$next" == *"Sprint 3"* ]]; then
     echo "  (planted) seeding fixtures/index.sprint2-buggy.html -> index.html"
     cp fixtures/index.sprint2-buggy.html index.html

@@ -18,6 +18,7 @@ required_files=(
   ".claude/agents/linter.md"
   ".claude/agents/code-reviewer.md"
   ".claude/agents/playwright-tester.md"
+  "reset-demo.sh"
 )
 
 missing=()
@@ -59,7 +60,7 @@ npm install
 npx playwright install chromium
 
 # 5. Make the scripts executable
-chmod +x run.sh scaffold-loop.sh
+chmod +x run.sh scaffold-loop.sh reset-demo.sh
 
 echo
 echo "✓ Setup complete."
@@ -70,4 +71,4 @@ echo "  • export ANTHROPIC_API_KEY=sk-ant-..."
 echo
 echo "Then:"
 echo "  ./run.sh                    # emergent run"
-echo "  DEMO_MODE=planted ./run.sh  # guaranteed Sprint-3 RED -> GREEN"
+echo "  DEMO_MODE=planted ./run.sh  # seeds the Sprint-3 bug for QA to catch"

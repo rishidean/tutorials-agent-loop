@@ -2,7 +2,7 @@
 
 Two ways to use this repo. Pick your path:
 
-- **"Just show me it run"** → Part 1 (5 minutes).
+- **"Just show me it run"** → Part 1 (roughly 10-20 minutes after setup).
 - **"I want to build my own loop"** → Part 2 (what's where and why) then Part 3 (place the pieces).
 
 If your first run misbehaves, jump to [Troubleshooting](#troubleshooting-your-first-run).
@@ -20,15 +20,16 @@ Full list in the [README](README.md#prerequisites-macos).
 ```bash
 git clone https://github.com/rishidean/tutorials-agent-loop
 cd tutorials-agent-loop
-bash setup.sh        # installs Playwright + Chromium, checks prereqs, chmods run.sh
+bash setup.sh        # installs Playwright + Chromium, checks prereqs, chmods scripts
 ```
 
-Make sure Claude Code is authed (`claude` once and sign in, or `export ANTHROPIC_API_KEY=...`),
-then:
+Make sure Claude Code is authed (`claude` once and sign in, or `export ANTHROPIC_API_KEY=...`).
+This run launches four fresh Claude Code sessions plus QA subagents, so expect real Claude usage.
+Then:
 
 ```bash
 ./run.sh                      # emergent run — honest, RED not guaranteed
-DEMO_MODE=planted ./run.sh    # planted run — Sprint 3 goes RED → fix → GREEN, every time
+DEMO_MODE=planted ./run.sh    # planted run — seeds the Sprint-3 bug for QA to catch
 ```
 
 Expect a full four-sprint run to take roughly **10-20 minutes** after setup. Each sprint launches a
@@ -36,11 +37,23 @@ fresh Claude Code session, and the terminal can be quiet for a few minutes while
 tests, fixes, and documents. First-time setup can add a few minutes because Playwright may download
 Chromium.
 
+Expected final wrapper line:
+
+```text
+ALL SPRINTS COMPLETE - 4 / 4 GREEN
+```
+
 When it finishes, open the app the loop just built:
 
 ```bash
 open index.html               # the loop's own output
 open reference/index.html     # or the finished answer key — no run required
+```
+
+To run the workshop again from Sprint 1:
+
+```bash
+./reset-demo.sh
 ```
 
 That's the whole demo. The rest of this doc is about understanding the machine and reusing it.
@@ -67,6 +80,8 @@ tutorials-agent-loop/
 │       ├── code-reviewer.md  ← subagent (Sonnet)
 │       └── playwright-tester.md ← subagent (Sonnet)
 ├── fixtures/          ← the planted bug for DEMO_MODE=planted. Tutorial-only.
+├── reset-demo.sh      ← restores the repo to the pre-run exercise state
+├── TROUBLESHOOTING.md ← first-run fixes for auth, models, Playwright, and resets
 └── reference/         ← the finished app (answer key). NOT part of the exercise.
 ```
 
@@ -164,11 +179,13 @@ input skills, planning phases, more QA gates, PR-per-sprint, and the climb to en
 - **The loop re-runs Sprint 1 forever.** The Builder isn't ticking the roadmap. Confirm it edits
   `roadmap.md` `[ ]→[x]` as its final step — the outer loop greps for `- [ ]` to decide what's next.
 - **It dies mid-sprint.** Raise the turn cap: `MAX_TURNS=120 ./run.sh`.
-- **Planted mode didn't go RED.** The agent re-added the guard on its own. Trim the affordability
-  hints in `specs/sprint-3.md` so only the acceptance criteria (not the build steps) mention it.
+- **Planted mode didn't visibly print RED.** That can happen; the wrapper guarantees the final
+  sprint status, not every internal QA line. Check `PROGRESS.md` for the Sprint 3 note about the
+  seeded affordability bug.
 - **Playwright can't open the app.** The tester opens it via `file://` + an absolute path. Make
   sure `bash setup.sh` finished (Chromium installed) and `index.html` exists at the repo root.
 - **Auth error on the first session.** Run `claude` once and sign in, or
   `export ANTHROPIC_API_KEY=...` before `./run.sh`.
 - **"Unknown model" on a `--model` flag.** Your CLI may use different aliases; check
   `claude --help` and adjust `BUILDER_MODEL` / the agent frontmatter.
+- **Still stuck?** See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for the longer version.

@@ -58,19 +58,45 @@ CLAUDE.md is the durable context. That's the whole trick.
 - **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code`
 - **Auth** — either run `claude` once and sign in, **or** `export ANTHROPIC_API_KEY=sk-ant-...`
 
+Cost note: the full run launches four fresh Claude Code sessions plus QA subagents. Expect real
+Claude usage. For a workshop, run `DEMO_MODE=planted` once ahead of time so you know your local
+environment is ready.
+
+## Cold-clone checklist
+
+```bash
+git clone https://github.com/rishidean/tutorials-agent-loop
+cd tutorials-agent-loop
+./setup.sh
+claude                         # sign in if you have not already
+DEMO_MODE=planted ./run.sh
+```
+
+Expected: after roughly **10-20 minutes**, the final wrapper line should say:
+
+```text
+ALL SPRINTS COMPLETE - 4 / 4 GREEN
+```
+
+To run the workshop again from the beginning:
+
+```bash
+./reset-demo.sh
+```
+
 ## Setup
 
 ```bash
 git clone https://github.com/rishidean/tutorials-agent-loop
 cd tutorials-agent-loop
-./setup.sh        # installs Playwright + Chromium, checks prereqs, chmods run.sh
+./setup.sh        # installs Playwright + Chromium, checks prereqs, chmods scripts
 ```
 
 ## Run it
 
 ```bash
 ./run.sh                      # emergent mode — the honest run
-DEMO_MODE=planted ./run.sh    # planted mode — guarantees the Sprint-3 RED → GREEN
+DEMO_MODE=planted ./run.sh    # planted mode — seeds the Sprint-3 bug for QA to catch
 ```
 
 Runtime expectation: after setup, the full four-sprint run is usually **10-20 minutes**. A sprint can
@@ -93,12 +119,13 @@ The loop walks the four sprints in `roadmap.md`:
 |---|---|---|
 | 1 | Core clicker — a harvest button + a score that persists | One-shot. Proves the basic loop. |
 | 2 | Farmhands — buy auto-harvesters that earn while idle | Adds state + an economy. |
-| 3 | Scaling cost + a spend guard | **The money moment** — where QA catches a bug and the inner loop self-corrects. |
+| 3 | Scaling cost + a spend guard | **The money moment** — where QA should catch the planted bug and the inner loop self-corrects. |
 | 4 | Polish — number formatting (1.2K / 3.4M) + a click pulse | Cosmetic finish. |
 
-On a typical run, Sprint 3 is where you watch the gate go **🔴 RED** (the build lets you hire a
-farmhand you can't afford, sending the score negative), the Builder read the failure, fix it, and
-re-run to **🟢 GREEN** — all on its own.
+In planted mode, Sprint 3 starts from a fixture that lets you hire a farmhand you can't afford,
+sending the score negative. The Sprint 3 QA path should catch that bug, the Builder fixes it, and the
+sprint ends **GREEN**. Depending on Claude Code's output style, the internal RED may appear as a
+literal line or as prose inside the Sprint 3 session summary.
 
 ### Two modes, on purpose
 
@@ -106,8 +133,8 @@ re-run to **🟢 GREEN** — all on its own.
   whether Sprint 3 goes RED depends on what the model actually wrote. Honest, but not guaranteed.
 - **planted**: right before Sprint 3, `run.sh` swaps in `fixtures/index.sprint2-buggy.html` — a
   complete, working build that deliberately ships **without** an affordability guard. Sprint 3's
-  acceptance test catches it every time, so the RED → fix → GREEN beat is reliable for a live demo.
-  It's documented here in the open — no smoke, no mirrors.
+  acceptance tests are written to catch and fix that bug. It's documented here in the open — no
+  smoke, no mirrors.
 
 ---
 
@@ -141,6 +168,8 @@ tutorials-agent-loop/
 ├── EXTENDING.md        ← the catalog of extensions (four moves → enterprise)
 ├── extensions/         ← hands-on follow-on exercises, each with a reference solution
 ├── scaffold-loop.sh    ← generates a fresh loop skeleton in a target dir
+├── reset-demo.sh       ← restores the repo to the pre-run exercise state
+├── TROUBLESHOOTING.md  ← first-run fixes for auth, models, Playwright, and resets
 ├── reference/
 │   └── index.html    ← the finished app (answer key). NOT part of the exercise.
 └── index.html        ← NOT committed. The loop generates it. Run ./run.sh to see it appear.
@@ -181,6 +210,11 @@ the keyboard to approve each file write — without it, the loop just hangs. Tha
 guardrails. It's fine **here** because this repo is a disposable sandbox that only touches its own
 folder. Don't carry that flag into a real codebase; there, scope tools with `--allowedTools` and a
 permission mode instead.
+
+## Troubleshooting and reset
+
+- First-run issues: see [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
+- Run it again from scratch: `./reset-demo.sh`.
 
 ## License
 
