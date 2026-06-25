@@ -1,1 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Click Farm</title>
+<style>
+  :root { font-family: system-ui, -apple-system, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         background: radial-gradient(1200px 600px at 50% -10%, #16351c, #0f1f12 60%);
+         color: #eafce0; }
+  .farm { text-align: center; padding: 2rem; width: min(92vw, 420px); }
+  .crop { font-size: 3.5rem; line-height: 1; }
+  #score { font-size: 3rem; font-weight: 800; margin: 0.25rem 0 1.25rem;
+           font-variant-numeric: tabular-nums; }
+  #harvest { font-size: 1.6rem; padding: 1rem 2rem; border: 0; border-radius: 1rem;
+             background: #ffd34d; color: #2a1d00; cursor: pointer; font-weight: 800;
+             transition: transform 0.08s ease; }
+  #harvest:active { transform: scale(0.96); }
+  #harvest.pulse { animation: pop 0.18s ease; }
+  @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  .shop { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #21402a; }
+  #hire { font-size: 1rem; padding: 0.6rem 1.2rem; border: 0; border-radius: 0.6rem;
+          background: #6cbf5a; color: #08220a; cursor: pointer; font-weight: 800;
+          transition: opacity 0.15s ease; }
+  #hire:disabled { opacity: 0.4; cursor: not-allowed; }
+  .muted { opacity: 0.85; font-size: 0.95rem; margin-top: 0.7rem;
+           font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <div class="farm">
+    <div class="crop">🌽</div>
+    <div id="score">0</div>
+    <button id="harvest">Harvest +1</button>
+    <div class="shop">
+      <button id="hire">Hire Farmhand</button>
+      <p class="muted">
+        Farmhands: <span id="farmhands">0</span>
+        &nbsp;·&nbsp; Next costs <span id="cost">10</span>
+      </p>
+    </div>
+  </div>
 
+<script>
+  /* Click Farm — REFERENCE BUILD (all four sprints complete).
+     This is ONE valid end state of the exercise — open it to play the finished
+     game. A real loop run may produce different-but-correct code; this is an
+     answer key, not the only right answer.
+
+     Sprint 1: harvest + persistent score
+     Sprint 2: farmhands that auto-harvest
+     Sprint 3: scaling cost + the affordability guard (score can never go negative)
+     Sprint 4: number formatting (1.2K / 3.4M) + a click pulse */
+
+  const KEY = 'clickfarm';
+  let state = load();
+
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && Number.isFinite(s.score) && Number.isFinite(s.farmhands)) return s;
+    } catch (e) { /* fall through to a fresh game */ }
+    return { score: 0, farmhands: 0 };
+  }
+  function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  // Sprint 3: the next farmhand costs more the more you already own.
+  function hireCost() { return Math.floor(10 * Math.pow(1.15, state.farmhands)); }
+
+  // Sprint 4: format big numbers for DISPLAY ONLY — stored state stays an exact integer.
+  function fmt(n) {
+    if (n < 1000) return String(n);
+    for (const [suffix, size] of [['B', 1e9], ['M', 1e6], ['K', 1e3]]) {
+      if (n >= size) return (n / size).toFixed(1).replace(/\.0$/, '') + suffix;
+    }
+    return String(n);
+  }
+
+  const $score = document.getElementById('score');
+  const $harvest = document.getElementById('harvest');
+  const $hire = document.getElementById('hire');
+  const $farmhands = document.getElementById('farmhands');
+  const $cost = document.getElementById('cost');
+
+  function render() {
+    const cost = hireCost();
+    $score.textContent = fmt(state.score);
+    $farmhands.textContent = state.farmhands;
+    $cost.textContent = fmt(cost);
+    $hire.disabled = state.score < cost;        // can't afford → button disabled
+  }
+
+  $harvest.addEventListener('click', () => {
+    state.score += 1;
+    save(); render();
+    $harvest.classList.remove('pulse');
+    void $harvest.offsetWidth;                   // reflow so the animation restarts
+    $harvest.classList.add('pulse');
+  });
+
+  $hire.addEventListener('click', () => {
+    const cost = hireCost();
+    if (state.score < cost) return;              // Sprint 3 guard: hire only when score >= cost
+    state.score -= cost;
+    state.farmhands += 1;
+    save(); render();
+  });
+
+  // Sprint 2: each farmhand adds +1 score per second while the page is open.
+  setInterval(() => {
+    if (state.farmhands > 0) {
+      state.score += state.farmhands;
+      save(); render();
+    }
+  }, 1000);
+
+  render();
+</script>
+</body>
+</html>
