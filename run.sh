@@ -27,7 +27,33 @@ MODEL="${BUILDER_MODEL:-opus}"
 DEMO_MODE="${DEMO_MODE:-emergent}"
 ROADMAP="roadmap.md"
 
+format_duration() {
+  local seconds="$1"
+  local minutes=$((seconds / 60))
+  local remainder=$((seconds % 60))
+
+  if (( minutes > 0 )); then
+    printf "%dm %02ds" "$minutes" "$remainder"
+  else
+    printf "%ds" "$remainder"
+  fi
+}
+
+state_for_sprint() {
+  local sprint_key="$1"
+  local line
+  line=$(grep -F "${sprint_key}:" "$ROADMAP" | head -n 1 || true)
+
+  case "$line" in
+    "- [x]"*) printf "GREEN" ;;
+    "- [!]"*) printf "BLOCKED" ;;
+    "- [ ]"*) printf "OPEN" ;;
+    *) printf "UNKNOWN" ;;
+  esac
+}
+
 n=0
+run_started_at=$(date +%s)
 echo "════════════════════════════════════════════════════════"
 echo "  THE LOOP — starting in '${DEMO_MODE}' mode"
 echo "  builder=${MODEL}  max_turns=${MAX_TURNS}  max_sprints=${MAX_SPRINTS}"
@@ -40,8 +66,13 @@ echo
 while grep -q '^- \[ \]' "$ROADMAP" && (( n < MAX_SPRINTS )); do
   n=$((n + 1))
   next=$(grep -m1 '^- \[ \]' "$ROADMAP")
+  next_body="${next#- \[ \] }"
+  sprint_key="${next_body%%:*}"
+  sprint_started_at=$(date +%s)
+
   echo "────────────────────────────────────────────────────────"
-  echo "▶ Iteration ${n} — next up: ${next#- \[ \] }"
+  echo "▶ Iteration ${n} — next up: ${next_body}"
+  echo "  ${sprint_key}: build -> run-qa ..."
   echo "────────────────────────────────────────────────────────"
 
   # PLANTED MODE: right before Sprint 3, seed a build that ships WITHOUT the
@@ -67,9 +98,30 @@ while grep -q '^- \[ \]' "$ROADMAP" && (( n < MAX_SPRINTS )); do
         --model "$MODEL" \
         --max-turns "$MAX_TURNS" \
         --dangerously-skip-permissions ; then
+    sprint_elapsed=$(( $(date +%s) - sprint_started_at ))
+    echo
+    echo "  ${sprint_key}: ERROR after $(format_duration "$sprint_elapsed")"
     echo "‼ session exited non-zero on iteration ${n} — stopping."
     break
   fi
+
+  sprint_elapsed=$(( $(date +%s) - sprint_started_at ))
+  sprint_state=$(state_for_sprint "$sprint_key")
+  echo
+  case "$sprint_state" in
+    GREEN)
+      echo "  ${sprint_key}: GREEN after $(format_duration "$sprint_elapsed")"
+      ;;
+    BLOCKED)
+      echo "  ${sprint_key}: BLOCKED after $(format_duration "$sprint_elapsed")"
+      ;;
+    OPEN)
+      echo "  ${sprint_key}: still OPEN after $(format_duration "$sprint_elapsed")"
+      ;;
+    *)
+      echo "  ${sprint_key}: state UNKNOWN after $(format_duration "$sprint_elapsed")"
+      ;;
+  esac
 
   # Did the Builder flag a blocker it couldn't get past in 3 attempts?
   if grep -q '^- \[!\]' "$ROADMAP"; then
@@ -79,12 +131,19 @@ while grep -q '^- \[ \]' "$ROADMAP" && (( n < MAX_SPRINTS )); do
 done
 
 echo
+run_elapsed=$(( $(date +%s) - run_started_at ))
+total_sprints=$(grep -cE '^- \[[ x!]\]' "$ROADMAP" || true)
+green_sprints=$(grep -cE '^- \[x\]' "$ROADMAP" || true)
+blocked_sprints=$(grep -cE '^- \[!\]' "$ROADMAP" || true)
 echo "════════════════════════════════════════════════════════"
 if grep -q '^- \[ \]' "$ROADMAP"; then
   echo "  STOPPED with work remaining (hit cap, blocked, or errored)."
+elif (( blocked_sprints > 0 )); then
+  echo "  STOPPED with ${blocked_sprints} blocked sprint(s)."
 else
-  echo "  ALL SPRINTS COMPLETE 🌽"
+  echo "  ALL SPRINTS COMPLETE - ${green_sprints} / ${total_sprints} GREEN"
 fi
+echo "  elapsed=$(format_duration "$run_elapsed")"
 echo "════════════════════════════════════════════════════════"
 grep -E '^- \[' "$ROADMAP" || true
 echo

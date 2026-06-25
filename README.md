@@ -73,6 +73,10 @@ cd tutorials-agent-loop
 DEMO_MODE=planted ./run.sh    # planted mode — guarantees the Sprint-3 RED → GREEN
 ```
 
+Runtime expectation: after setup, the full four-sprint run is usually **10-20 minutes**. A sprint can
+look quiet while its fresh Claude Code session is working; wait for the wrapper's per-sprint GREEN /
+BLOCKED / ERROR line before deciding it is stuck.
+
 Then open `index.html` in a browser and play what it built.
 
 > **Just want to play the finished game?** Open [`reference/index.html`](reference/) — a

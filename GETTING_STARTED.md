@@ -31,6 +31,11 @@ then:
 DEMO_MODE=planted ./run.sh    # planted run — Sprint 3 goes RED → fix → GREEN, every time
 ```
 
+Expect a full four-sprint run to take roughly **10-20 minutes** after setup. Each sprint launches a
+fresh Claude Code session, and the terminal can be quiet for a few minutes while that session builds,
+tests, fixes, and documents. First-time setup can add a few minutes because Playwright may download
+Chromium.
+
 When it finishes, open the app the loop just built:
 
 ```bash
